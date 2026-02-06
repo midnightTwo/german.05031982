@@ -338,6 +338,36 @@
             animation: pulse 2s ease-in-out infinite;
         }
 
+        /* ── Timer ─────────────────────────────────────────── */
+        .timer-bar {
+            margin-top: 16px;
+            width: 100%;
+            height: 4px;
+            background: var(--surface-3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), var(--accent));
+            border-radius: 2px;
+            transition: width 1s linear;
+        }
+        .timer-text {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-3);
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .timer-text svg {
+            width: 13px; height: 13px;
+            opacity: .5;
+        }
+
         /* ── Error / Empty ────────────────────────────────── */
         .err {
             background: rgba(248,113,113,.06);
@@ -598,9 +628,36 @@
     })();
 
     // ══════════════════════════════════════════════════════════
-    // App Logic — Auto-load & Polling
+    // App Logic — Auto-load & Polling with 10min timer
     // ══════════════════════════════════════════════════════════
-    const POLL_INTERVAL = 8000; // 8 seconds
+    const POLL_INTERVAL = 8000;
+    const timers = {};  // per-account countdown timers
+
+    function fmtTime(sec) {
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function startTimer(idx, expiresIn) {
+        if (timers[idx]) clearInterval(timers[idx]);
+        let remaining = expiresIn;
+        const total = 600;
+        const update = () => {
+            const fill = document.getElementById('timer-fill-' + idx);
+            const text = document.getElementById('timer-text-' + idx);
+            if (!fill || !text) return;
+            fill.style.width = Math.max(0, (remaining / total) * 100) + '%';
+            text.textContent = remaining > 0 ? `Code expires in ${fmtTime(remaining)}` : 'Code expired';
+            if (remaining <= 0) {
+                clearInterval(timers[idx]);
+                fetchCode(idx);
+            }
+            remaining--;
+        };
+        update();
+        timers[idx] = setInterval(update, 1000);
+    }
 
     async function fetchCode(idx) {
         const el = document.getElementById('results-' + idx);
@@ -612,6 +669,7 @@
 
             if (data.error) {
                 statusEl.textContent = 'Error';
+                if (timers[idx]) clearInterval(timers[idx]);
                 el.innerHTML = `<div class="err">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
@@ -619,21 +677,23 @@
                     ${esc(data.error)}
                 </div>`;
             } else if (!data.code) {
-                statusEl.textContent = 'Connected — Polling';
+                statusEl.textContent = 'Waiting for code...';
+                if (timers[idx]) clearInterval(timers[idx]);
                 el.innerHTML = `
                     <div class="no-code-state">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                   d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                         </svg>
-                        <p>No verification codes found yet</p>
+                        <p>Waiting for a new verification code...</p>
                         <div class="poll-indicator">
-                            <span class="poll-dot"></span> Auto-checking for new codes...
+                            <span class="poll-dot"></span> Checking inbox every 8 seconds
                         </div>
                     </div>
                 `;
             } else {
-                statusEl.textContent = 'Connected';
+                statusEl.textContent = 'Code active';
+                const expiresIn = data.expires_in || 600;
                 el.innerHTML = `
                     <div class="code-display">
                         <div class="code-value" onclick="copy('${esc(data.code)}', this)">${esc(data.code)}</div>
@@ -646,11 +706,16 @@
                         </div>
                         ${data.subject ? `<div class="code-subject">${esc(data.subject)}</div>` : ''}
                         <p class="code-hint">Tap code to copy</p>
-                        <div class="poll-indicator">
-                            <span class="poll-dot"></span> Auto-refreshing
+                        <div class="timer-bar"><div class="timer-fill" id="timer-fill-${idx}"></div></div>
+                        <div class="timer-text">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span id="timer-text-${idx}"></span>
                         </div>
                     </div>
                 `;
+                startTimer(idx, expiresIn);
             }
         } catch {
             statusEl.textContent = 'Offline';

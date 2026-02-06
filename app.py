@@ -3,6 +3,8 @@ import requests
 import imaplib
 import email
 from email.header import decode_header
+from email.utils import parsedate_to_datetime
+from datetime import datetime, timezone
 import re
 import base64
 import time
@@ -173,12 +175,26 @@ def fetch_latest_code(account):
             code = extract_code(subject + " " + body)
 
             if code:
+                # Check if email is within the 10-minute window
+                try:
+                    email_dt = parsedate_to_datetime(date_str)
+                    if email_dt.tzinfo is None:
+                        email_dt = email_dt.replace(tzinfo=timezone.utc)
+                    now = datetime.now(timezone.utc)
+                    age_seconds = (now - email_dt).total_seconds()
+                    expires_in = max(0, 600 - int(age_seconds))  # 600s = 10 min
+                    if expires_in <= 0:
+                        continue  # Code expired, look for newer one
+                except Exception:
+                    expires_in = 600  # If can't parse date, show anyway
+
                 mail.logout()
                 return {
                     "code": code,
                     "from": sender,
                     "subject": subject,
                     "date": date_str,
+                    "expires_in": expires_in,
                 }
 
         mail.logout()
