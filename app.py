@@ -12,17 +12,17 @@ app = Flask(__name__)
 # ─── Account config ───────────────────────────────────────────────
 ACCOUNTS = [
     {
-        "email": "golovchenko_19992909@outlook.com",
-        "password": "OvwYmtT5id",
+        "email": "avramenko_19982010@outlook.com",
+        "password": "fN5egOO016",
         "refresh_token": (
-            "M.C544_BAY.0.U.-CqPp6mjB0Exm33ecKA5ofUP0GkpRb2U1CdcavikDUrdm"
-            "s5n9IQDadRTviAqUiRmXNl2SYwMp69Dvk7r1XeQX0YMZgxaMNq4V1Au9YaLo"
-            "Qv5DskDXBm7Z2B9qy*aPdQBfHo2ro41tWqmmkyvg1HTqJ!BA04cqz5E!P1Gz"
-            "Dm*YoUhUSVOjm*ZrrFL!xER8U1CX5L3zgkG0eHiCh0tGvGw5*l1Jdi4cMczA"
-            "bIFQLBrWSSJ4QlRKYrbDZRe*rk8m2qL36IEv66B53zuz5trEl9cWLCNkfYQGu"
-            "MuLbf6A3yvQ4reVzHDigk0iyE5f3mprpa3bTWoET8huCMsvPMlbU4k3BXya0!"
-            "zbfbbzYVF8EppINjorgFISmDF30Gg4Ld04h9EyRv4drXZTF2oWuHFR6as3RZAV"
-            "kvJas!6FE1wp6Mt6imOh"
+            "M.C546_BAY.0.U.-Cg0l96WUAiSbclZcScnpnoHXY4Krv7e1649hGv4vmv8g"
+            "W4EXmXbrOCKOXloBsedNLrfB5on54fRvtbUVQZWpnx2DuQn!6ldgXNDjpL*TSg"
+            "P9MQnDOM9mL5KIyC*HNc0cMsu3W6zWbzCqhr3JV8rfzULQ*5soGScDR3M586*"
+            "6A3O*HEA29N*Si4PAxCbMGjIZKBbw0RT4WAjoXdGdUeOUle4Gxr!paflPFdYk"
+            "Kedhhu5k9FDw30gsSh2KR9wN4X0cx2mit4ZqbXDgO5848GOWXJQrwQF71PX*P"
+            "3t!GqGbgdXd44QurUT2AvpD3fDHamlobZ5UYTjBE8jpF1DI0yOQFmAXXDKN14"
+            "wyq8Lh!0P2Ao9ECRicizhemmP!R1WmL3oerJtHYKNUd3Kj003X5v!jvlIlMmz"
+            "FaiVuPKfYVlRIGBmf"
         ),
         "client_id": "9e5f94bc-e8a4-4e73-b8be-63364c29d753",
     },
@@ -94,10 +94,45 @@ def extract_body(msg):
     return body
 
 
-def extract_codes(text):
-    """Try to find verification codes in text."""
-    codes = re.findall(r'\b(\d{4,8})\b', text)
-    return codes
+def extract_code(text):
+    """Intelligently extract a verification code from email text."""
+    # Remove URLs (they contain tons of random numbers)
+    clean = re.sub(r'https?://\S+', '', text)
+    # Remove HTML tags
+    clean = re.sub(r'<[^>]+>', ' ', clean)
+    # Remove common false-positive numbers (zip codes, street numbers, years)
+    # by checking contextually
+
+    # Strategy 1: Code near keywords like "code", "verify", "pin"
+    keyword_patterns = [
+        r'(?:code|код|pin|otp|passcode)[\s:;—\-]*[\r\n\s]*(\d{4,8})\b',
+        r'(?:enter|entering)[\s\S]{0,50}?(\d{4,8})\b',
+        r'(?:verification|security code|confirm|verify)[\s\S]{0,80}?(\d{4,8})\b',
+    ]
+    for pattern in keyword_patterns:
+        matches = re.findall(pattern, clean, re.IGNORECASE)
+        if matches:
+            return matches[0]
+
+    # Strategy 2: Standalone number on its own line (very likely a code)
+    line_codes = re.findall(r'^\s*(\d{5,8})\s*$', clean, re.MULTILINE)
+    if line_codes:
+        return line_codes[0]
+
+    # Strategy 3: Any 6-8 digit number, filtering false positives
+    all_codes = re.findall(r'\b(\d{6,8})\b', clean)
+    bad = {str(y) for y in range(1990, 2030)}
+    filtered = [c for c in all_codes if c not in bad]
+    if filtered:
+        return filtered[0]
+
+    # Strategy 4: 4-5 digit codes, filtering years
+    short = re.findall(r'\b(\d{4,5})\b', clean)
+    filtered = [c for c in short if c not in bad]
+    if filtered:
+        return filtered[0]
+
+    return None
 
 
 def fetch_latest_code(account):
@@ -135,12 +170,12 @@ def fetch_latest_code(account):
             sender = decode_mime_words(msg.get("From", ""))
             date_str = msg.get("Date", "")
             body = extract_body(msg)
-            codes = extract_codes(subject + " " + body)
+            code = extract_code(subject + " " + body)
 
-            if codes:
+            if code:
                 mail.logout()
                 return {
-                    "code": codes[-1],
+                    "code": code,
                     "from": sender,
                     "subject": subject,
                     "date": date_str,
