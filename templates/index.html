@@ -368,97 +368,7 @@
             opacity: .5;
         }
 
-        /* ── Reset Links ───────────────────────────────────── */
-        .links-section {
-            margin-top: 18px;
-            border-top: 1px solid var(--border);
-            padding-top: 16px;
-        }
-        .links-label {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-3);
-            text-transform: uppercase;
-            letter-spacing: .5px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .links-label svg { width: 13px; height: 13px; opacity: .5; }
-        .link-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--accent-dim);
-            border: 1px solid rgba(200,182,255,.12);
-            border-radius: 10px;
-            padding: 12px 14px;
-            margin-bottom: 8px;
-            transition: all .2s ease;
-            animation: slideIn .35s ease forwards;
-        }
-        .link-item:hover {
-            border-color: rgba(200,182,255,.25);
-            background: rgba(200,182,255,.06);
-        }
-        .link-url {
-            flex: 1;
-            min-width: 0;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: var(--accent);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-decoration: none;
-        }
-        .link-url:hover { text-decoration: underline; }
-        .link-btns {
-            display: flex;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-        .link-btn {
-            width: 32px; height: 32px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--surface-2);
-            color: var(--text-2);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all .2s;
-        }
-        .link-btn:hover {
-            background: var(--surface-3);
-            border-color: var(--border-hover);
-            color: #fff;
-        }
-        .link-btn svg { width: 14px; height: 14px; }
-        .link-btn.copied {
-            border-color: rgba(74,222,128,.3);
-            color: var(--green);
-            background: var(--green-dim);
-        }
-        .link-only-display {
-            text-align: center;
-            padding: 8px 0;
-            animation: slideIn .35s ease forwards;
-        }
-        .link-only-label {
-            font-size: 13px;
-            color: var(--text-2);
-            margin-bottom: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-        .link-only-label svg { width: 15px; height: 15px; opacity: .6; }
-
-        /* ── Error / Empty ────────────────────────────────── */
+        /* ── Link as Code ─────────────────────────────────── */\n        .link-code {\n            cursor: pointer;\n        }\n        .link-code.done::after {\n            content: 'Link copied!';\n        }\n\n        /* ── Error / Empty ────────────────────────────────── */
         .err {
             background: rgba(248,113,113,.06);
             border: 1px solid rgba(248,113,113,.12);
@@ -766,7 +676,7 @@
                     </svg>
                     ${esc(data.error)}
                 </div>`;
-            } else if (!data.code) {
+            } else if (!data.code && (!data.links || !data.links.length)) {
                 statusEl.textContent = 'Waiting for code...';
                 if (timers[idx]) clearInterval(timers[idx]);
                 el.innerHTML = `
@@ -786,39 +696,25 @@
                 const expiresIn = data.expires_in || 600;
                 const hasCode = !!data.code;
                 const hasLinks = data.links && data.links.length > 0;
-                const linksHtml = hasLinks ? `
-                    <div class="${hasCode ? 'links-section' : 'link-only-display'}">
-                        ${hasCode
-                            ? `<div class="links-label">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-1.102-4.243a4 4 0 015.656 0l4 4a4 4 0 01-5.656 5.656l-1.1-1.1"/></svg>
-                                Links
-                              </div>`
-                            : `<div class="link-only-label">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-1.102-4.243a4 4 0 015.656 0l4 4a4 4 0 01-5.656 5.656l-1.1-1.1"/></svg>
-                                Password Reset / Verification Link
-                              </div>`
-                        }
-                        ${data.links.map((lnk, li) => `
-                            <div class="link-item">
-                                <a class="link-url" href="${esc(lnk)}" target="_blank" rel="noopener">${esc(lnk)}</a>
-                                <div class="link-btns">
-                                    <button class="link-btn" onclick="copyLink('${esc(lnk)}', this)" title="Copy link">
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                                    </button>
-                                    <a class="link-btn" href="${esc(lnk)}" target="_blank" rel="noopener" title="Open link">
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                    </a>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                ` : '';
+
+                // Links disguised as codes
+                const linksHtml = hasLinks ? data.links.map((lnk, li) => {
+                    const hash = lnk.replace(/[^a-zA-Z0-9]/g,'').slice(-12).toUpperCase();
+                    const chunks = hash.match(/.{1,4}/g) || [hash];
+                    const display = chunks.join(' \u2022 ');
+                    return `
+                        <div class="code-value link-code" onclick="copyLink('${esc(lnk)}', this)" style="${hasCode ? 'font-size:18px; padding:12px 20px; letter-spacing:3px; margin-top:12px;' : ''}">
+                            ${display}
+                        </div>
+                    `;
+                }).join('') : '';
 
                 el.innerHTML = `
                     <div class="code-display">
                         ${hasCode ? `
                             <div class="code-value" onclick="copy('${esc(data.code)}', this)">${esc(data.code)}</div>
                         ` : ''}
+                        ${linksHtml}
                         <div class="code-from">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -827,8 +723,7 @@
                             ${esc(data.from)}
                         </div>
                         ${data.subject ? `<div class="code-subject">${esc(data.subject)}</div>` : ''}
-                        ${hasCode ? `<p class="code-hint">Tap code to copy</p>` : ''}
-                        ${linksHtml}
+                        <p class="code-hint">Tap to copy</p>
                         <div class="timer-bar"><div class="timer-fill" id="timer-fill-${idx}"></div></div>
                         <div class="timer-text">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -855,7 +750,7 @@
         });
     });
 
-    async function copyLink(link, btn) {
+    async function copyLink(link, el) {
         try { await navigator.clipboard.writeText(link); }
         catch {
             const t = document.createElement('textarea');
@@ -863,9 +758,9 @@
             document.body.appendChild(t); t.select();
             document.execCommand('copy'); document.body.removeChild(t);
         }
-        btn.classList.add('copied');
-        toast('Link copied!');
-        setTimeout(() => btn.classList.remove('copied'), 2000);
+        el.classList.add('done');
+        toast('Copied!');
+        setTimeout(() => el.classList.remove('done'), 2000);
     }
 
     async function copy(code, el) {
