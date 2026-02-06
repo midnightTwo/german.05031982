@@ -14,18 +14,19 @@ app = Flask(__name__)
 # ─── Account config ───────────────────────────────────────────────
 ACCOUNTS = [
     {
-        "email": "gorenko19820807@outlook.com",
-        "password": "Oc3x7zPRLx",
+        "email": "jaoqvad836@hotmail.com",
+        "password": "W5eVxXOKSU",
         "refresh_token": (
-            "M.C542_BAY.0.U.-Cih!Rk9Y!GQcQCRbtB9ZoZKMNWz7SEPfphj6vpoqCY1Ar"
-            "amannd3YRKIFg5RMj0YX5kBVtsCDfmbmc9TbjcEiZSEhc4DgTYc0xwCrEZA8Jw"
-            "iKc7pwm*Va!tY9eBfcOp5gmJBzzAPrnhggw3rHbX42zrbxiQi82iGfhK2Ui3E7"
-            "sqH4mPkIoWHHkMxlJ7X2ukbO1w!gBnBDIYKv2odLlBuGCRrnHBSTgD4C2q8YT"
-            "Z5Jhh29cmU1InejUk!!sOO6L*1pP6DrYtWJmP3qabZeTwHcGSS7gIZ7igXz9j1"
-            "2QxnPZDtW0n2rIh!A5OXLMt1vM8Zjl0VDYxPTd2*y44xTcOsh9Yg3HLhkkmMU"
-            "cUDJvoOieP!Jf3msDl6CwGSGmZ9TEshmgWvZscbCsSz3ZZT4jMB1QE$"
+            "M.C513_BAY.0.U.-CpkGHhALnQeAjoboxApX!HCGb2rOmFUyNkes8NKlB!f*u"
+            "7id7KNvoqLOXRZLwQ6cswDmbfMH8jYfIitETM6cGYVEev6Plqr7a87k7ARuWId"
+            "sJpir7DSiIYC1F6p7y!9NXv5OvGhilOLPH*ADikv29iTWFRDbkDofSJ2LCzymp"
+            "IVhoDt7zKXB6d7P*DQYQJ*u9mUKpKS0y2XT!p8x29Ynlm6kiwu*TJ8!PXKyY"
+            "JgyHyTrJ5HNFU!nZt1dHV*uer3xWFN339KBvevNFiksQmjGehcamwlBoatFo*p"
+            "*ppGPxFjENsaT9am3vbsxVcb!O4Rap0QFJto3M5bdJRDMIxTam50pkgO2NUHq6"
+            "ivdDkydzvby2IW7VUO*OhymppDmULO165gCzhY!AWuW06HVdyG8ed4beFf2QR3"
+            "qsgO5KaUEzpZn"
         ),
-        "client_id": "9e5f94bc-e8a4-4e73-b8be-63364c29d753",
+        "client_id": "8b4ba9dd-3ea5-4e5f-86f1-ddba2230dcf2",
     },
 ]
 
