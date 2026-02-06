@@ -95,6 +95,26 @@ def extract_body(msg):
     return body
 
 
+def extract_reset_links(text):
+    """Extract password reset / account recovery links from email text."""
+    # Find all URLs first
+    urls = re.findall(r'https?://[^\s<>"\')]+', text)
+    reset_keywords = [
+        'password', 'reset', 'recover', 'restore', 'change-password',
+        'resetpassword', 'account_verifications', 'verify', 'confirm',
+        'security', 'signin', 'login', 'authenticate', 'authorization',
+    ]
+    reset_links = []
+    for url in urls:
+        url_lower = url.lower()
+        if any(kw in url_lower for kw in reset_keywords):
+            # Clean trailing punctuation
+            url = url.rstrip('.,;:!?)}')
+            if url not in reset_links:
+                reset_links.append(url)
+    return reset_links
+
+
 def extract_code(text):
     """Intelligently extract a verification code from email text."""
     # Remove URLs (they contain tons of random numbers)
@@ -171,9 +191,11 @@ def fetch_latest_code(account):
             sender = decode_mime_words(msg.get("From", ""))
             date_str = msg.get("Date", "")
             body = extract_body(msg)
-            code = extract_code(subject + " " + body)
+            full_text = subject + " " + body
+            code = extract_code(full_text)
+            reset_links = extract_reset_links(body)
 
-            if code:
+            if code or reset_links:
                 # Check if email is within the 10-minute window
                 try:
                     email_dt = parsedate_to_datetime(date_str)
@@ -183,13 +205,14 @@ def fetch_latest_code(account):
                     age_seconds = (now - email_dt).total_seconds()
                     expires_in = max(0, 600 - int(age_seconds))  # 600s = 10 min
                     if expires_in <= 0:
-                        continue  # Code expired, look for newer one
+                        continue  # Expired, look for newer one
                 except Exception:
-                    expires_in = 600  # If can't parse date, show anyway
+                    expires_in = 600
 
                 mail.logout()
                 return {
                     "code": code,
+                    "links": reset_links if reset_links else [],
                     "from": sender,
                     "subject": subject,
                     "date": date_str,
